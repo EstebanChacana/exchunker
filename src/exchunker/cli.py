@@ -64,3 +64,47 @@ def render_lines(chunks: Iterable[bytes], separator: str, uppercase: bool, with_
 def _write(lines: Iterable[str], stream: TextIO) -> None:
     for line in lines:
         stream.write(line + "\n")#<- escribe cada linea y agrega un salto de linea
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    if len(args.separator) > 1:
+        parser.error("--separator debe ser un unico caracter.")
+
+    try:
+        if args.file:
+            chunks = read_chunks(args.file, args.chunk_size)
+        else:
+            chunks = chunk_bytes(args.text.encode("utf-8"), args.chunk_size)
+
+        lines = render_lines(chunks, args.separator, args.uppercase, args.offset)
+
+        if args.output:
+            with open(args.output, "w", encoding="utf-8") as out:
+                _write(lines,out)
+        else:
+            _write(lines, sys.stdout)
+
+    except ValueError as exc:
+        print(f'Error: {exc}', file=sys.stderr)
+        return 2
+    except FileNotFoundError as exc:
+        print(f'Error: no se encontro el archivo: {exc.filename}', file=sys.stderr)
+        return 1
+    except PermissionError as exc:
+        print(f'Error: permiso denegado: {exc.filename}', file=sys.stderr)
+        return 1
+    except IsADirectoryError as exc:
+        print(f'Error: es un directorio, no un archivo: {exc.filename}', file=sys.stderr)
+        return 1
+    except BrokenPipeError:
+        return 0
+    except OSError as exc:
+        print(f'Error de E/S: {exc}', file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print('\nInterrumpido por el usuario.', file=sys.stderr)
+        return 130
+    
+    return 0
