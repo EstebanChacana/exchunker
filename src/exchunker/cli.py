@@ -65,6 +65,7 @@ def _write(lines: Iterable[str], stream: TextIO) -> None:
     for line in lines:
         stream.write(line + "\n")#<- escribe cada linea y agrega un salto de linea
 
+#main del programa esto junta todo y hace que funcione
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -73,19 +74,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--separator debe ser un unico caracter.")
 
     try:
-        if args.file:
+        if args.file: #<-- si es archivo
             chunks = read_chunks(args.file, args.chunk_size)
-        else:
+        else: #<-- si es texto en terminal
             chunks = chunk_bytes(args.text.encode("utf-8"), args.chunk_size)
 
         lines = render_lines(chunks, args.separator, args.uppercase, args.offset)
 
+        #se encarga de escribir las lineas
         if args.output:
             with open(args.output, "w", encoding="utf-8") as out:
                 _write(lines,out)
         else:
             _write(lines, sys.stdout)
 
+    #control de errores
     except ValueError as exc:
         print(f'Error: {exc}', file=sys.stderr)
         return 2
